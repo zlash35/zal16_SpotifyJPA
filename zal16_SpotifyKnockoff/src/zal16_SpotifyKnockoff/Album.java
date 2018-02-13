@@ -6,8 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+/**
+ * The Class Album.
+ */
 // TODO: Auto-generated Javadoc
 public class Album {
+	
+
 	private String albumID;
 	private String title;
 	private String releaseDate;
@@ -100,7 +105,45 @@ public class Album {
 			e.printStackTrace();
 		}
 	}
-
+	
+	
+	/**
+	 * Pulls a album from the DB.
+	 *
+	 * @param albumID the album ID
+	 * @param title the title
+	 * @param releaseDate the release date
+	 * @param recordingCompany the recording company
+	 * @param numberOfTracks the number of tracks
+	 * @param pmrcRating the pmrc rating
+	 * @param length the length
+	 */
+	public Album(String albumID, String title, String releaseDate, String recordingCompany, int numberOfTracks, String pmrcRating, int length) {
+		
+		this.albumID = albumID;
+		this.title = title; 
+		this.releaseDate = releaseDate; 
+		this.recordingCompany = recordingCompany; 
+		this.numberOfTracks = numberOfTracks; 
+		this.pmrcRating = pmrcRating; 
+		this.length = length; 
+		
+		albumSongs = new Hashtable<String, Song>();
+	}
+	
+	Vector<String> getAlbumRecord() {
+		
+		Vector<String> albumRecord = new Vector<>(8); // We declare it 6 because that's how many columns we have. 
+		albumRecord.add(this.albumID);
+		albumRecord.add(this.title);
+		albumRecord.add(this.releaseDate);
+		albumRecord.add(this.coverImagePath);
+		albumRecord.add(this.recordingCompany);
+		albumRecord.add(String.valueOf(this.numberOfTracks));
+		albumRecord.add(this.pmrcRating);
+		albumRecord.add(String.valueOf(this.length));
+		return albumRecord;
+	}
 	/**
 	 * Delete album from DB.
 	 *

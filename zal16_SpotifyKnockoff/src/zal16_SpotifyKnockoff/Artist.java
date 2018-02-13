@@ -14,10 +14,19 @@ public class Artist {
 
 
 	
+	/** The artist ID. */
 	private String artistID;
+	
+	/** The first name. */
 	private String firstName;
+	
+	/** The last name. */
 	private String lastName;
+	
+	/** The band name. */
 	private String bandName;
+	
+	/** The bio. */
 	private String bio;
 	
 	/**
@@ -87,6 +96,35 @@ public class Artist {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	
+	/**
+	 * Pulls a artist from DB.
+	 *
+	 * @param artistID the artist ID
+	 * @param firstName the first name
+	 * @param lastName the last name
+	 * @param bandName the band name
+	 * @param b 
+	 */
+	public Artist(String artistID, String firstName, String lastName, String bandName) {
+		this.artistID = artistID;
+		this.firstName = firstName; 
+		this.lastName = lastName; 
+		this.bandName = bandName; 
+		
+	}
+	
+	Vector<String> getArtistRecord() {
+		
+		Vector<String> artistRecord = new Vector<>(5); // We declare it 5 because that's how many columns we have. 
+		artistRecord.add(this.artistID);
+		artistRecord.add(this.firstName);
+		artistRecord.add(this.lastName);
+		artistRecord.add(this.bandName);
+		artistRecord.add(this.bio);
+		return artistRecord;					
 	}
 	
 	/**

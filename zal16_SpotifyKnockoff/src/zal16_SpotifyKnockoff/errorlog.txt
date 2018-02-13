@@ -1,0 +1,13 @@
+2018/01/30 20:51:36 Test message
+2018/01/30 20:51:36 next message
+2018/01/30 20:51:36  work you mother
+2018/02/11 16:42:34 Can not issue executeUpdate() or executeLargeUpdate() for SELECTs
+2018/02/11 16:42:39 Can not issue executeUpdate() or executeLargeUpdate() for SELECTs
+2018/02/11 16:43:55 Can not issue executeUpdate() or executeLargeUpdate() for SELECTs
+2018/02/11 16:48:56 Parameter index out of range (1 > number of parameters, which is 0).
+2018/02/11 16:59:38 Parameter index out of range (1 > number of parameters, which is 0).
+2018/02/11 17:01:15 Parameter index out of range (0 < 1 ).
+2018/02/11 17:13:30 Parameter index out of range (1 > number of parameters, which is 0).
+2018/02/11 17:31:10 Parameter index out of range (1 > number of parameters, which is 0).
+2018/02/11 17:32:49 Parameter index out of range (1 > number of parameters, which is 0).
+2018/02/11 19:54:10 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ''%mad' at line 1

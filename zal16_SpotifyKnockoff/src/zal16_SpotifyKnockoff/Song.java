@@ -12,6 +12,8 @@ import java.util.*;
  * The Class Song.
  */
 public class Song {
+	
+	
 	private String songID;
 	private String title;
 	private double length;
@@ -63,6 +65,39 @@ public class Song {
 		}
 		
 		
+	}
+	
+	
+	
+	/**
+	 * Pulls a song from the database.
+	 *
+	 * @param songID the song ID
+	 * @param title the title
+	 * @param length the length
+	 * @param releaseDate the release date
+	 * @param recordDate the record date
+	 */
+	public Song(String songID, String title, double length, String releaseDate, String recordDate){
+		this.songID = songID;
+		this.title = title;
+		this.length = length;
+		this.releaseDate = releaseDate;
+		this.recordDate = recordDate;
+		
+		songArtists = new Hashtable<String, Artist>();
+	}
+	
+	Vector<String> getSongRecord() {
+		
+		Vector<String> songRecord = new Vector<>(6); // We declare it 6 because that's how many columns we have. 
+		songRecord.add(this.songID);
+		songRecord.add(this.title);
+		songRecord.add(this.filePath);
+		songRecord.add(String.valueOf(this.length));
+		songRecord.add(this.releaseDate);
+		songRecord.add(this.recordDate);
+		return songRecord; 
 	}
 	
 	/**

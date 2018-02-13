@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Vector;
 
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -79,8 +80,9 @@ public class DbUtilities {
             }
             
         } catch (Exception e) {
-        	e.printStackTrace(); // debug
-            
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
         }
     }
     
@@ -100,8 +102,9 @@ public class DbUtilities {
             Statement statement = conn.createStatement();
             return statement.executeQuery(sql); // Return ResultSet
         } catch (Exception e) {
-        	e.printStackTrace(); // debug
-            
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
         }
         return null;
     }
@@ -120,8 +123,9 @@ public class DbUtilities {
             statement.executeUpdate(sql); // execute query
             return true;
         } catch (Exception e) {
-        	e.printStackTrace(); // debug
-            
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
         }
         return false;
     }
