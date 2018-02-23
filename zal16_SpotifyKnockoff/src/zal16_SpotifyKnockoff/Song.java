@@ -1,6 +1,19 @@
 package zal16_SpotifyKnockoff;
 
 import java.util.Map;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.swing.JOptionPane;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,16 +24,59 @@ import java.util.*;
 /**
  * The Class Song.
  */
+
+@Entity 
+@Table (name = "song")
 public class Song {
 	
+	/** The song ID. */
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	
+	@Column(name = "song_id")
 	private String songID;
+	
+	/** The title. */
+	@Column(name = "title")
 	private String title;
+	
+	/** The length. */
+	@Column(name = "length")
 	private double length;
+	
+	/** The file path. */
+	@Column(name = "file_path")
 	private String filePath;
+	
+	/** The release date. */
+	@Column(name = "release_date")
 	private String releaseDate;
+	
+	/** The record date. */
+	@Column(name = "record_date")
 	private String recordDate;
+	
+	/** The song artists. */
+	@Transient
 	Map<String, Artist> songArtists;  // Check whether should be private or not. 
+	
+	/** The emfactory. */
+	@Transient
+	EntityManagerFactory emfactory = Persistence.createEntityManagerFactory("zal16_SpotifyKnockoff");
+	
+	/** The emanager. */
+	@Transient
+	EntityManager emanager = emfactory.createEntityManager();
+	
+	
+	/**
+	 * Instantiates a new song.
+	 */
+	public Song() {
+		
+		super();
+	}
+	
 	
 	/**
 	 * Instantiates a new song.
@@ -37,37 +93,30 @@ public class Song {
 		this.releaseDate = releaseDate;
 		this.recordDate = recordDate;
 		this.songID = UUID.randomUUID().toString();
+	
 		
-		// System.out.println(this.songID);
-		// String sql = "INSERT INTO song (song_id,title,length,file_path,release_date,record_date,fk_album_id) ";
-		// sql += "VALUES ('" + this.songID + "', '" + this.title + "', " + this.length + ", '', '" + this.releaseDate + "', '" + this.recordDate + "', '" + this.albumID + "');";
-		String sql = "INSERT INTO song (song_id,title,length,file_path,release_date,record_date) ";
-		sql += "VALUES (?, ?, ?, ?, ?, ?);";
+		emanager.getTransaction().begin();
 		
-		System.out.println(sql);
+		Song s = new Song();
+		s.setSongID(this.songID);
+		s.setTitle(this.title);
+		s.setLength(this.length);
+		s.setRecordDate(this.recordDate);
+		s.setReleaseDate(this.releaseDate);
+		s.setFilePath(this.filePath);
 		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, this.songID);
-			ps.setString(2,  this.title);
-			ps.setDouble(3, this.length);
-			ps.setString(4, "");
-			ps.setString(5, this.releaseDate);
-			ps.setString(6, this.recordDate);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		emanager.persist(s);
+		emanager.getTransaction().commit();
+		
+		
+		s.closeEmanagerConnection();  // These two methods are to wait until there is nothing else in the emanager and emfactory.
+		s.closeEmfactoryConnection();
+		//emanager.close();
+		//emfactory.close();
 		
 		
 	}
-	
-	
+
 	
 	/**
 	 * Pulls a song from the database.
@@ -88,6 +137,11 @@ public class Song {
 		songArtists = new Hashtable<String, Artist>();
 	}
 	
+	/**
+	 * Gets the song record.
+	 *
+	 * @return the song record
+	 */
 	Vector<String> getSongRecord() {
 		
 		Vector<String> songRecord = new Vector<>(6); // We declare it 6 because that's how many columns we have. 
@@ -106,8 +160,10 @@ public class Song {
 	 * 2. Puts data for object in a results set. 
 	 * @param songID the song ID
 	 */
+	
 	public Song(String songID){
 		songArtists = new Hashtable<String, Artist>();
+		
 		String sql = "SELECT * FROM song WHERE song_id = '" + songID + "';";
 		// System.out.println(sql);
 		DbUtilities db = new DbUtilities();
@@ -129,20 +185,25 @@ public class Song {
 				
 	}
 	
+	
 	/**
 	 * Delete song from DB.
 	 *
 	 * @param songID the song ID
 	 */
 	public void  deleteSong(String songID) {
-		String sql = "DELETE FROM song WHERE song_id = '" + songID + "';";
-		// System.out.println(sql);
-			//I'm pretty sure we don't need the try catch black with SQLexception because we are not updating the DB with Strings. 
-			//Am I correct?
-			DbUtilities db = new DbUtilities();
-			db.executeQuery(sql);
-			db.closeDbConnection();
-			db = null;
+		this.songID = songID;
+		
+		emanager.getTransaction().begin();
+		
+		Song s = emanager.find(Song.class, this.songID);
+		emanager.remove(s);
+		
+		
+		emanager.getTransaction().commit();
+		
+		s.closeEmanagerConnection();
+		s.closeEmfactoryConnection();
 		
 	}	
 	
@@ -218,6 +279,91 @@ public class Song {
 	}
 	
 	/**
+	 * Close emanager connection.
+	 */
+	public void closeEmanagerConnection(){
+    	try {
+            if(emanager != null){ // Check if connection object already exists
+                emanager.close();
+                emanager = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	
+	/**
+	 * Close emfactory connection.
+	 */
+	public void closeEmfactoryConnection(){
+    	try {
+            if(emfactory != null){ // Check if connection object already exists
+                emfactory.close();
+                emfactory = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	/**
+	 * Update file path.
+	 *
+	 * @param songID the song ID
+	 * @param filePath the file path
+	 */
+	public void updateFilePath(String songID, String filePath) {
+		this.filePath = filePath; 
+		this.songID = songID;
+		
+		emanager.getTransaction().begin();
+		
+		Song s = emanager.find(Song.class, this.songID);
+		
+		s.setFilePath(filePath);
+		
+		emanager.persist(s);
+		emanager.getTransaction().commit();
+		
+		s.closeEmanagerConnection();
+		s.closeEmfactoryConnection();
+		//emanager.close();
+		//emfactory.close();
+		
+	}
+	
+	/**
+	 * Update title.
+	 *
+	 * @param songID the song ID
+	 * @param title the title
+	 */
+	public void updateTitle(String songID, String title) {
+		this.title = title; 
+		this.songID = songID;
+		
+		emanager.getTransaction().begin();
+		
+		Song s = emanager.find(Song.class, this.songID);
+		
+		s.setTitle(title);
+		
+		emanager.persist(s);
+		emanager.getTransaction().commit();
+		
+		s.closeEmanagerConnection();
+		s.closeEmfactoryConnection();
+		//emanager.close();  
+		//emfactory.close();
+		
+	}
+	
+	/**
 	 * Gets the release date.
 	 *
 	 * @return the release date
@@ -250,28 +396,56 @@ public class Song {
 	 *
 	 * @param title the new title
 	 */
-	public void setTitle(String title) {
-		
-		this.title = title; 
-		
-		String sql = "UPDATE song SET title = ? WHERE song_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, title);
-			ps.setString(2,  this.songID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	
+	public void setTitle(String title) {
+		this.title = title; 
 	}
 	
+	/**
+	 * Sets the song ID.
+	 *
+	 * @param songID the new song ID
+	 */
+	public void setSongID(String songID) {
+		this.songID = songID;
+	}
+
+	/**
+	 * Sets the length.
+	 *
+	 * @param length the new length
+	 */
+	public void setLength(double length) {
+		this.length = length;
+	}
+
+	/**
+	 * Sets the release date.
+	 *
+	 * @param releaseDate the new release date
+	 */
+	public void setReleaseDate(String releaseDate) {
+		this.releaseDate = releaseDate;
+	}
+
+	/**
+	 * Sets the record date.
+	 *
+	 * @param recordDate the new record date
+	 */
+	public void setRecordDate(String recordDate) {
+		this.recordDate = recordDate;
+	}
+
+	/**
+	 * Sets the song artists.
+	 *
+	 * @param songArtists the song artists
+	 */
+	public void setSongArtists(Map<String, Artist> songArtists) {
+		this.songArtists = songArtists;
+	}
+
 	/**
 	 * Gets the length.
 	 *
@@ -313,25 +487,8 @@ public class Song {
 	 *
 	 * @param filePath the new file path
 	 */
-	public void setFilePath(String filePath) {
-		
+	public void setFilePath(String filePath) {	
 		this.filePath = filePath;
-		
-		String sql = "UPDATE song SET file_path = ? WHERE song_id = ?;";
-				
-				try {
-					DbUtilities db = new DbUtilities();
-					Connection conn = db.getConn();
-					PreparedStatement ps = conn.prepareStatement(sql);
-					ps.setString(1, filePath);
-					ps.setString(2,  this.songID);
-					ps.executeUpdate();
-					db.closeDbConnection();
-					db = null;
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 		
 	}
 }

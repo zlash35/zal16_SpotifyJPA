@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+	<persistence-unit name="zal16_SpotifyKnockoff">
+		<class>zal16_SpotifyKnockoff.Song</class>
+		<class>zal16_SpotifyKnockoff.Artist</class>
+		<class>zal16_SpotifyKnockoff.Album</class>
+		
+		<properties>
+			 <property name="javax.persistence.jdbc.url" value="jdbc:mysql://sis-teach-01.sis.pitt.edu:3306/spotify_knockoff"/>
+			 <property name="javax.persistence.jdbc.user" value="spotifyUser"/>
+	         <property name="javax.persistence.jdbc.password" value="spotifyUser123"/>
+	         <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
+	         <property name="eclipselink.logging.level" value="FINE"/>
+         </properties>
+	</persistence-unit>
+</persistence>

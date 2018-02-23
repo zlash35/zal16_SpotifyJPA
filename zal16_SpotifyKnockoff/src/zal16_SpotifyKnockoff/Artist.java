@@ -6,29 +6,68 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.swing.JOptionPane;
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class Artist.
  */
+@Entity 
+@Table (name = "artist")
 public class Artist {
-
-
 	
 	/** The artist ID. */
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+
+	
+	
+	@Column(name = "artist_id")
 	private String artistID;
 	
 	/** The first name. */
+	@Column(name = "first_name")
 	private String firstName;
 	
 	/** The last name. */
+	@Column(name = "last_name")
 	private String lastName;
 	
 	/** The band name. */
+	@Column(name = "band_name")
 	private String bandName;
 	
 	/** The bio. */
+	@Column(name = "bio")
 	private String bio;
 	
+	/** The emfactory. */
+	@Transient
+	EntityManagerFactory emfactory = Persistence.createEntityManagerFactory("zal16_SpotifyKnockoff");
+	
+	/** The emanager. */
+	@Transient
+	EntityManager emanager = emfactory.createEntityManager();
+	
+	
+	/**
+	 * Instantiates a new artist.
+	 */
+	public Artist() {
+		
+		super();
+	}
+
 	/**
 	 * Instantiates a new artist.
 	 *
@@ -43,32 +82,28 @@ public class Artist {
 		this.bandName = bandName; 
 		this.artistID = UUID.randomUUID().toString();
 		
-		//System.out.println(this.artistID);
-		String sql = "INSERT INTO artist (artist_id, first_name, last_name, band_name, bio) ";
-		sql += "VALUES (?, ?, ?, ?, ?);";
+		emanager.getTransaction().begin();
 		
-		System.out.println(sql);
+		Artist a = new Artist();
+		a.setArtistID(this.artistID);
+		a.setFirstName(this.firstName);
+		a.setLastName(this.lastName);
+		a.setBandName(this.bandName);
+
 		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, this.artistID);
-			ps.setString(2, this.firstName);
-			ps.setString(3, this.lastName);
-			ps.setString(4, this.bandName);
-			ps.setString(5, "");
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		emanager.persist(a);
+		emanager.getTransaction().commit();
+		
+		a.closeEmanagerConnection();
+		a.closeEmfactoryConnection(); // These two methods are to wait until there is nothing else in the emanager and emfactory.
+		
+		//emanager.close();
+		//emfactory.close();
 		
 		
 	}
 	
+
 	/**
 	 * Instantiates a new artist.
 	 * 1. Based on artist ID 
@@ -106,7 +141,6 @@ public class Artist {
 	 * @param firstName the first name
 	 * @param lastName the last name
 	 * @param bandName the band name
-	 * @param b 
 	 */
 	public Artist(String artistID, String firstName, String lastName, String bandName) {
 		this.artistID = artistID;
@@ -116,6 +150,11 @@ public class Artist {
 		
 	}
 	
+	/**
+	 * Gets the artist record.
+	 *
+	 * @return the artist record
+	 */
 	Vector<String> getArtistRecord() {
 		
 		Vector<String> artistRecord = new Vector<>(5); // We declare it 5 because that's how many columns we have. 
@@ -133,15 +172,131 @@ public class Artist {
 	 * @param artistID the artist ID
 	 */
 	public void deleteArtist(String artistID) {
+		this.artistID = artistID;
+
+		emanager.getTransaction().begin();
 		
-		String sql = "DELETE FROM artist WHERE artist_id = '" + artistID + "';";
-		
-		DbUtilities db = new DbUtilities();
-		db.executeQuery(sql);
-		db.closeDbConnection();
-		db = null;
+		Artist a = emanager.find(Artist.class, this.artistID);
+		emanager.remove(a);
 		
 		
+		emanager.getTransaction().commit();
+		
+		a.closeEmanagerConnection();
+		a.closeEmfactoryConnection();
+		
+	}
+	/**
+	 * Close emanager connection.
+	 */
+	public void closeEmanagerConnection(){
+    	try {
+            if(emanager != null){ // Check if connection object already exists
+                emanager.close();
+                emanager = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	
+	/**
+	 * Close emfactory connection.
+	 */
+	public void closeEmfactoryConnection(){
+    	try {
+            if(emfactory != null){ // Check if connection object already exists
+                emfactory.close();
+                emfactory = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	/**
+	 * Update first name.
+	 *
+	 * @param artistID the artist ID
+	 * @param firstName the first name
+	 */
+	public void updateFirstName(String artistID, String firstName) {
+		this.firstName = firstName; 
+		this.artistID = artistID;
+		
+		emanager.getTransaction().begin();
+		
+		Artist a = emanager.find(Artist.class, this.artistID);
+		
+		a.setFirstName(firstName);
+		
+		emanager.persist(a);
+		emanager.getTransaction().commit();
+		
+		a.closeEmanagerConnection();
+		a.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Update last name.
+	 *
+	 * @param artistID the artist ID
+	 * @param lastName the last name
+	 */
+	public void updateLastName(String artistID, String lastName) {
+		this.lastName = lastName; 
+		this.artistID = artistID;
+		
+		emanager.getTransaction().begin();
+		
+		Artist a = emanager.find(Artist.class, this.artistID);
+		
+		a.setLastName(lastName);
+		
+		emanager.persist(a);
+		emanager.getTransaction().commit();
+		
+		a.closeEmanagerConnection();
+		a.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Update band name.
+	 *
+	 * @param artistID the artist ID
+	 * @param bandName the band name
+	 */
+	public void updateBandName(String artistID, String bandName) {
+		this.bandName = bandName; 
+		this.artistID = artistID;
+		
+		emanager.getTransaction().begin();
+		
+		Artist a = emanager.find(Artist.class, this.artistID);
+		
+		a.setBandName(bandName);
+		
+		emanager.persist(a);
+		emanager.getTransaction().commit();
+		
+		a.closeEmanagerConnection();
+		a.closeEmfactoryConnection();		
+	}
+	
+	/**
+	 * Sets the artist ID.
+	 *
+	 * @param artistID the new artist ID
+	 */
+	public void setArtistID(String artistID) {
+		this.artistID = artistID;
 	}
 	
 	/**
@@ -153,23 +308,6 @@ public class Artist {
 	public void setBandName(String bandName) {
 		this.bandName = bandName;
 		
-		String sql = "UPDATE artist SET band_name = ? WHERE artist_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, bandName);
-			ps.setString(2,  this.artistID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
 	}
 
 	/**
@@ -179,22 +317,7 @@ public class Artist {
 	 */
 	public void setBio(String bio) {
 		this.bio = bio;
-		
-		String sql = "UPDATE artist SET bio = ? WHERE artist_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, bio);
-			ps.setString(2,  this.artistID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	
 	}
 
 	/**
@@ -214,21 +337,6 @@ public class Artist {
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
 		
-		String sql = "UPDATE artist SET first_name = ? WHERE artist_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, firstName);
-			ps.setString(2,  this.artistID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -248,21 +356,6 @@ public class Artist {
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 		
-		String sql = "UPDATE artist SET last_name = ? WHERE artist_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, lastName);
-			ps.setString(2,  this.artistID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	/**

@@ -6,22 +6,81 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.swing.JOptionPane;
+
+// TODO: Auto-generated Javadoc
 /**
  * The Class Album.
  */
 // TODO: Auto-generated Javadoc
+@Entity 
+@Table (name = "album")
 public class Album {
 	
-
+	/** The album ID. */
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	
+	@Column(name = "album_id")
 	private String albumID;
+	
+	/** The title. */
+	@Column(name = "title")
 	private String title;
+	
+	/** The release date. */
+	@Column(name = "release_date")
 	private String releaseDate;
+	
+	/** The cover image path. */
+	@Column(name = "cover_image_path")
 	private String coverImagePath;
+	
+	/** The recording company. */
+	@Column(name = "recording_company_name")
 	private String recordingCompany;
+	
+	/** The number of tracks. */
+	@Column(name = "number_of_tracks")
 	private int numberOfTracks;
+	
+	/** The pmrc rating. */
+	@Column(name = "PMRC_rating")
 	private String pmrcRating;
+	
+	/** The length. */
+	@Column(name = "length")
 	private int length;
+	
+	/** The album songs. */
+	@Transient
     Map <String, Song> albumSongs;
+	
+	/** The emfactory. */
+	@Transient
+	EntityManagerFactory emfactory = Persistence.createEntityManagerFactory("zal16_SpotifyKnockoff");
+	
+	/** The emanager. */
+	@Transient
+	EntityManager emanager = emfactory.createEntityManager();
+    
+    /**
+     * Instantiates a new album.
+     */
+    public Album() {
+		
+		super();
+	}
 	
 	/**
 	 * Instantiates a new album.
@@ -44,31 +103,25 @@ public class Album {
 		this.length = length; 
 		this.albumID = UUID.randomUUID().toString();
 		
-		String sql = "INSERT INTO album (album_id,title,release_date,cover_image_path,recording_company_name,number_of_tracks,PMRC_rating,length) ";
-        sql += "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 		
-		System.out.println(sql);
+		emanager.getTransaction().begin();
 		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, this.albumID);
-			ps.setString(2, this.title);
-			ps.setString(3, this.releaseDate);
-			ps.setString(4, " ");
-			ps.setString(5, this.recordingCompany);
-			ps.setInt(6, this.numberOfTracks);
-			ps.setString(7, this.pmrcRating);
-			ps.setInt(8, this.length);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		Album al = new Album();
+		al.setAlbumID(this.albumID);
+		al.setTitle(this.title);
+		al.setReleaseDate(this.releaseDate);
+		al.setRecordingCompany(this.recordingCompany);
+		al.setNumberOfTracks(this.numberOfTracks);
+		al.setPmrcRating(this.pmrcRating);
+		al.setLength(this.length);
 		
+		emanager.persist(al);
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();  // These two methods are to wait until there is nothing else in the emanager and emfactory.
+		al.closeEmfactoryConnection();
+		//emanager.close();
+		//emfactory.close();
 		
 	}
 
@@ -131,6 +184,11 @@ public class Album {
 		albumSongs = new Hashtable<String, Song>();
 	}
 	
+	/**
+	 * Gets the album record.
+	 *
+	 * @return the album record
+	 */
 	Vector<String> getAlbumRecord() {
 		
 		Vector<String> albumRecord = new Vector<>(8); // We declare it 6 because that's how many columns we have. 
@@ -151,12 +209,18 @@ public class Album {
 	 */
 	public void deleteAlbum(String albumID) {
 		
-		String sql = "DELETE FROM album WHERE album_id = '" + albumID + "';";
+		this.albumID = albumID;
 		
-		DbUtilities db = new DbUtilities();
-		db.executeQuery(sql);
-		db.closeDbConnection();
-		db = null;
+		emanager.getTransaction().begin();
+		
+		Album al = emanager.find(Album.class, this.albumID);
+		emanager.remove(al);
+		
+		
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();
+		al.closeEmfactoryConnection();
 		
 		
 		
@@ -230,6 +294,171 @@ public class Album {
 		db = null;
         song = null; 
 	}
+	
+	/**
+	 * Close emanager connection.
+	 */
+	public void closeEmanagerConnection(){
+    	try {
+            if(emanager != null){ // Check if connection object already exists
+                emanager.close();
+                emanager = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	
+	/**
+	 * Close emfactory connection.
+	 */
+	public void closeEmfactoryConnection(){
+    	try {
+            if(emfactory != null){ // Check if connection object already exists
+                emfactory.close();
+                emfactory = null;
+            }
+            
+        } catch (Exception e) {
+        	//e.printStackTrace(); // debug
+        	JOptionPane.showMessageDialog(null, "Unable to connect to database");
+			ErrorLogger.log(e.getMessage());
+        }
+    }
+	/**
+	 * Update cover image path.
+	 *
+	 * @param albumID the album ID
+	 * @param coverImagePath the cover image path
+	 */
+	public void updateCoverImagePath(String albumID, String coverImagePath) {
+		this.coverImagePath = coverImagePath; 
+		this.albumID = albumID;
+		
+		emanager.getTransaction().begin();
+		
+		Album al = emanager.find(Album.class, this.albumID);
+		
+		al.setCoverImagePath(coverImagePath);
+		
+		emanager.persist(al);
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();
+		al.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Update release date.
+	 *
+	 * @param albumID the album ID
+	 * @param releaseDate the release date
+	 */
+	public void updateReleaseDate(String albumID, String releaseDate) {
+		this.releaseDate = releaseDate; 
+		this.albumID = albumID;
+		
+		emanager.getTransaction().begin();
+		
+		Album al = emanager.find(Album.class, this.albumID);
+		
+		al.setReleaseDate(releaseDate);
+		
+		emanager.persist(al);
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();
+		al.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Update title.
+	 *
+	 * @param albumID the album ID
+	 * @param title the title
+	 */
+	public void updateTitle(String albumID, String title) {
+		this.title = title; 
+		this.albumID = albumID;
+		
+		emanager.getTransaction().begin();
+		
+		Album al = emanager.find(Album.class, this.albumID);
+		
+		al.setTitle(title);
+		
+		emanager.persist(al);
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();
+		al.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Update recording company.
+	 *
+	 * @param albumID the album ID
+	 * @param recordingCompany the recording company
+	 */
+	public void updateRecordingCompany(String albumID, String recordingCompany) {
+		this.recordingCompany = recordingCompany; 
+		this.albumID = albumID;
+		
+		emanager.getTransaction().begin();
+		
+		Album al = emanager.find(Album.class, this.albumID);
+		
+		al.setRecordingCompany(recordingCompany);
+		
+		emanager.persist(al);
+		emanager.getTransaction().commit();
+		
+		al.closeEmanagerConnection();
+		al.closeEmfactoryConnection();
+		
+	}
+	
+	/**
+	 * Sets the album ID.
+	 *
+	 * @param albumID the new album ID
+	 */
+	public void setAlbumID(String albumID) {
+		this.albumID = albumID;
+	}
+	
+	/**
+	 * Sets the number of tracks.
+	 *
+	 * @param numberOfTracks the new number of tracks
+	 */
+	public void setNumberOfTracks(int numberOfTracks) {
+		this.numberOfTracks = numberOfTracks;
+	}
+
+	/**
+	 * Sets the pmrc rating.
+	 *
+	 * @param pmrcRating the new pmrc rating
+	 */
+	public void setPmrcRating(String pmrcRating) {
+		this.pmrcRating = pmrcRating;
+	}
+
+	/**
+	 * Sets the length.
+	 *
+	 * @param length the new length
+	 */
+	public void setLength(int length) {
+		this.length = length;
+	}
 
 	/**
 	 * Sets the cover image path.
@@ -237,25 +466,10 @@ public class Album {
 	 * @param coverImagePath the new cover image path
 	 */
 	
-	//You are only allowed to set the Cover Image Path, recording date, title, recording company. 
+	//You are only allowed to set the Cover Image Path, release date, title, recording company. 
 	public void setCoverImagePath(String coverImagePath) {
 		this.coverImagePath = coverImagePath;
 		
-		String sql = "UPDATE album SET cover_image_path = ? WHERE album_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, coverImagePath);
-			ps.setString(2,  this.albumID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -266,21 +480,6 @@ public class Album {
 	public void setRecordingCompany(String recordingCompany) {
 		this.recordingCompany = recordingCompany;
 		
-		String sql = "UPDATE album SET recording_company_name = ? WHERE album_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, recordingCompany);
-			ps.setString(2,  this.albumID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -299,23 +498,6 @@ public class Album {
 	 */
 	public void setTitle(String title) {
 		this.title = title;
-		
-		String sql = "UPDATE album SET title = ? WHERE album_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, title);
-			ps.setString(2,  this.albumID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
 		
 	}
 
@@ -336,21 +518,6 @@ public class Album {
 	public void setReleaseDate(String releaseDate) {
 		this.releaseDate = releaseDate;
 		
-		String sql = "UPDATE album SET release_date = ? WHERE album_id = ?;";
-		
-		try {
-			DbUtilities db = new DbUtilities();
-			Connection conn = db.getConn();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, releaseDate);
-			ps.setString(2,  this.albumID);
-			ps.executeUpdate();
-			db.closeDbConnection();
-			db = null;
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	/**
